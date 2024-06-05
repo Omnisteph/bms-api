@@ -1,7 +1,7 @@
 import { Role } from "@prisma/client";
 import { IsNotEmpty, IsOptional, IsString, IsEnum } from "class-validator";
 
-export class UserDto {
+export class MemberDto {
     @IsString()
     @IsNotEmpty()
     readonly name: string
@@ -13,6 +13,10 @@ export class UserDto {
     @IsString()
     @IsNotEmpty()
     readonly phoneNumber: string
+
+    @IsString()
+    @IsNotEmpty()
+    readonly membershipStart: string
 
     @IsString()
     @IsNotEmpty()
@@ -21,12 +25,9 @@ export class UserDto {
     @IsString()
     @IsNotEmpty()
     readonly address: string
-
-    @IsEnum(Role, {each: true})
-    readonly role: Role
 }
 
-export class UpdateUserDto {
+export class UpdateMemberDto {
     @IsString()
     @IsOptional()
     readonly name: string
@@ -41,9 +42,13 @@ export class UpdateUserDto {
 
     @IsString()
     @IsOptional()
+    readonly membershipStart: string
+
+    @IsString()
+    @IsOptional()
     readonly address: string
 
-    @IsOptional()
+    @IsOptional( )
     @IsEnum(Role, {each: true})
     readonly role: Role
 }

@@ -13,27 +13,65 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String    @id @default(uuid())
-  name        String
-  email       String    @unique
-  phoneNumber String
-  address     String
-  role        Role      @default(MEMBER)
-  password    Password?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+model Member {
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  phoneNumber     String
+  address         String
+  membershipStart DateTime
+  isActive        Boolean        @default(true)
+  role            Role           @default(MEMBER)
+  password        Password?
+  borrowRecords   BorrowRecord[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 model Password {
   id           String @id @default(uuid())
-  user         User   @relation(fields: [userId], references: [id])
-  userId       String @unique
+  member       Member @relation(fields: [memberId], references: [id])
+  memberId     String @unique
   passwordHash String
+}
+
+model Book {
+  id            String         @id @default(uuid())
+  title         String
+  author        String
+  genre         String
+  publishedDate DateTime
+  isbn          String         @unique
+  status        Status         @default(AVAILABLE)
+  borrowRecords BorrowRecord[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model BorrowRecord {
+  id           String       @id @default(uuid())
+  bookId       String
+  book         Book         @relation(fields: [bookId], references: [id])
+  memberId     String      
+  member       Member       @relation(fields: [memberId], references: [id])
+  borrowedDate DateTime
+  dueDate      DateTime
+  returnDate   DateTime?
+  status       BorrowStatus @default(BORROWED)
 }
 
 enum Role {
   ADMIN
   LIBRARIAN
   MEMBER
+}
+
+enum Status {
+  AVAILABLE
+  BORROWED
+}
+
+enum BorrowStatus {
+  BORROWED
+  RETURNED
 }

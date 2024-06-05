@@ -1,31 +1,27 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
-import { UserDto, UpdateUserDto } from './dto/user.request';
+import { MemberDto, UpdateMemberDto } from './dto/user.request';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
     constructor (private readonly prisma: PrismaService) {}
 
-    async hashPassword (password: string) {
-        const saltOrRounds = 10
-        return await bcrypt.hash(password, saltOrRounds)
-    }
-
-    async singUp(input: UserDto) {
-        const { name, email, phoneNumber, address, password } = input;
-        const checkUser = await this.__checkIfUserExistsByEmail(email);
+    async singUp(input: MemberDto) {
+        const { name, email, phoneNumber, address, password, membershipStart } = input;
+        const checkUser = await this.__checkIfMemberExistsByEmail(input.email);
         if(checkUser) {
             throw new BadRequestException('This User Already Exist');
         }else {
             try {
-                const hashPass = await this.hashPassword(password);
-                const user = await this.prisma.user.create({
+                const hashPass = await bcrypt.hash(input.password, 10);
+                const user = await this.prisma.member.create({
                     data: {
                         name,
                         email,
                         address,
                         phoneNumber,
+                        membershipStart,
                         password: {
                             create: {
                                 passwordHash: hashPass
@@ -41,9 +37,9 @@ export class UserService {
         }
     }
 
-    async getUsers() {
+    async getMembers() {
         try {
-          const users = await this.prisma.user.findMany();
+          const users = await this.prisma.member.findMany();
           return users;  
         } catch (error) {
           console.error(error)  
@@ -51,13 +47,13 @@ export class UserService {
         
     }
 
-    async updateUser(id: string, update: UpdateUserDto) {
+    async updateMember(id: string, update: UpdateMemberDto) {
         try {
-            const checkUser = this.__checkIfUserExistsById(id);
+            const checkUser = await this.__checkIfMemberExistsById(id);
             if(!checkUser){
                 throw new NotFoundException('User Not Found');
             }
-            const user = await this.prisma.user.update({
+            const user = await this.prisma.member.update({
                 where: { id },
                 data: update
             })
@@ -68,16 +64,31 @@ export class UserService {
         }
     }
 
+    async deactivateMember(id: string){
+        const findUser = await this.__checkIfMemberExistsById(id);
+        if(!findUser) {
+            throw new NotFoundException('User Not Found');
+        }
+        return await this.prisma.member.update({
+            where: {id: findUser.id},
+            data: {
+                isActive: {
+                    set: !findUser.isActive
+                }
+            }
+        })
+    }
+
     // Helper Functions//
-    async __checkIfUserExistsByEmail(email: string) {
-        const user = this.prisma.user.findUnique({
+    async __checkIfMemberExistsByEmail(email: string) {
+        const user = this.prisma.member.findUnique({
           where: { email }
         });
         return user;
       }
 
-      async __checkIfUserExistsById(id: string) {
-            const user = this.prisma.user.findUnique({
+      async __checkIfMemberExistsById(id: string) {
+            const user = this.prisma.member.findUnique({
                 where: {id}
             });
             return user;
